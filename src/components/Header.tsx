@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, Download, ListOrdered, Plus, Wallet } from "lucide-react";
+import { BarChart3, Download, ListOrdered, Plus, Store, Wallet } from "lucide-react";
 
 interface HeaderProps {
   onAddExpense: () => void;
@@ -41,6 +41,13 @@ export default function Header({ onAddExpense, onExport, exportDisabled }: Heade
           >
             <ListOrdered className="h-4 w-4" />
             <span className="hidden sm:inline">Categories</span>
+          </Link>
+          <Link
+            href="/vendors"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <Store className="h-4 w-4" />
+            <span className="hidden sm:inline">Vendors</span>
           </Link>
           <button
             type="button"

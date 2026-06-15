@@ -9,6 +9,7 @@ import {
   getMonthOverMonthChange,
   getSpendingTrend,
   getTopCategories,
+  getTopVendors,
 } from "./analytics";
 
 let idCounter = 0;
@@ -230,6 +231,56 @@ describe("getCategoryComparison", () => {
     const bills = result.find((r) => r.category === "Bills");
     expect(food).toEqual({ category: "Food", current: 150, previous: 100, absoluteChange: 50, percentChange: 50 });
     expect(bills).toEqual({ category: "Bills", current: 50, previous: 0, absoluteChange: 50, percentChange: null });
+  });
+});
+
+describe("getTopVendors", () => {
+  it("returns an empty array for no expenses", () => {
+    expect(getTopVendors([])).toEqual([]);
+  });
+
+  it("groups by normalized (trimmed, case-insensitive) description", () => {
+    const expenses: Expense[] = [
+      makeExpense({ description: "Starbucks", amount: 5, createdAt: 1 }),
+      makeExpense({ description: "  starbucks ", amount: 7, createdAt: 2 }),
+      makeExpense({ description: "Amazon order", amount: 8, createdAt: 3 }),
+    ];
+    const result = getTopVendors(expenses);
+    expect(result).toEqual([
+      { vendor: "starbucks", total: 12, count: 2, share: 12 / 20 },
+      { vendor: "Amazon order", total: 8, count: 1, share: 8 / 20 },
+    ]);
+  });
+
+  it("uses the most recently created expense's casing for the display name", () => {
+    const expenses: Expense[] = [
+      makeExpense({ description: "uber ride", amount: 10, createdAt: 1 }),
+      makeExpense({ description: "Uber Ride", amount: 10, createdAt: 2 }),
+    ];
+    const result = getTopVendors(expenses);
+    expect(result[0].vendor).toBe("Uber Ride");
+    expect(result[0].total).toBe(20);
+    expect(result[0].count).toBe(2);
+  });
+
+  it("ignores expenses with an empty/blank description", () => {
+    const expenses: Expense[] = [
+      makeExpense({ description: "  ", amount: 10 }),
+      makeExpense({ description: "Costco", amount: 5 }),
+    ];
+    const result = getTopVendors(expenses);
+    expect(result).toEqual([{ vendor: "Costco", total: 5, count: 1, share: 1 }]);
+  });
+
+  it("respects the limit argument and sorts descending by total spend", () => {
+    const expenses: Expense[] = [
+      makeExpense({ description: "Starbucks", amount: 5 }),
+      makeExpense({ description: "Amazon", amount: 50 }),
+      makeExpense({ description: "Uber", amount: 20 }),
+    ];
+    const result = getTopVendors(expenses, 2);
+    expect(result).toHaveLength(2);
+    expect(result.map((r) => r.vendor)).toEqual(["Amazon", "Uber"]);
   });
 });
 
