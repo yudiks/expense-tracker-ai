@@ -21,6 +21,13 @@ export interface CategoryShare {
   share: number; // 0-1
 }
 
+export interface VendorShare {
+  vendor: string;
+  total: number;
+  count: number;
+  share: number; // 0-1
+}
+
 export interface CategoryComparison {
   category: Category;
   current: number;
@@ -110,6 +117,45 @@ export function getTopCategories(expenses: Expense[], limit?: number): CategoryS
     .map(([category, total]) => ({
       category,
       total,
+      share: grandTotal === 0 ? 0 : total / grandTotal,
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  return limit ? ranked.slice(0, limit) : ranked;
+}
+
+/**
+ * Returns vendors (derived from each expense's `description`, trimmed and
+ * normalized for case) ranked by total spend, along with the number of
+ * transactions and each vendor's share of the overall total. The displayed
+ * vendor name uses the original casing from the most recently created
+ * matching expense. If there's no spending, an empty array is returned.
+ */
+export function getTopVendors(expenses: Expense[], limit?: number): VendorShare[] {
+  const totals = new Map<string, number>();
+  const counts = new Map<string, number>();
+  const displayNames = new Map<string, { name: string; createdAt: number }>();
+
+  for (const expense of expenses) {
+    const key = expense.description.trim().toLowerCase();
+    if (!key) continue;
+
+    totals.set(key, (totals.get(key) ?? 0) + expense.amount);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+
+    const existing = displayNames.get(key);
+    if (!existing || expense.createdAt > existing.createdAt) {
+      displayNames.set(key, { name: expense.description.trim(), createdAt: expense.createdAt });
+    }
+  }
+
+  const grandTotal = Array.from(totals.values()).reduce((sum, value) => sum + value, 0);
+
+  const ranked = Array.from(totals.entries())
+    .map(([key, total]) => ({
+      vendor: displayNames.get(key)?.name ?? key,
+      total,
+      count: counts.get(key) ?? 0,
       share: grandTotal === 0 ? 0 : total / grandTotal,
     }))
     .sort((a, b) => b.total - a.total);
