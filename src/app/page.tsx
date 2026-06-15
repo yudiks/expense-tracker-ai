@@ -6,17 +6,18 @@ import SummaryCards from "@/components/SummaryCards";
 import ExpenseFiltersBar, { EMPTY_FILTERS } from "@/components/ExpenseFilters";
 import ExpenseList from "@/components/ExpenseList";
 import ExpenseFormModal from "@/components/ExpenseFormModal";
+import ExportPanel from "@/components/ExportPanel";
 import CategoryBreakdownChart from "@/components/charts/CategoryBreakdownChart";
 import MonthlyTrendChart from "@/components/charts/MonthlyTrendChart";
 import { useExpenses } from "@/hooks/useExpenses";
 import type { Expense, ExpenseFilters, ExpenseInput } from "@/lib/types";
-import { exportExpensesToCSV } from "@/lib/utils";
 
 export default function Home() {
   const { expenses, isLoaded, addExpense, updateExpense, deleteExpense } = useExpenses();
   const [filters, setFilters] = useState<ExpenseFilters>(EMPTY_FILTERS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   const filteredExpenses = useMemo(() => {
     return expenses
@@ -59,7 +60,7 @@ export default function Home() {
   }
 
   function handleExport() {
-    exportExpensesToCSV(filteredExpenses);
+    setIsExportOpen(true);
   }
 
   return (
@@ -104,6 +105,10 @@ export default function Home() {
 
       {isModalOpen && (
         <ExpenseFormModal expense={editingExpense} onSave={handleSave} onClose={closeModal} />
+      )}
+
+      {isExportOpen && (
+        <ExportPanel expenses={expenses} onClose={() => setIsExportOpen(false)} />
       )}
     </div>
   );
